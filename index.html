@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <!-- 반응형 웹을 위해 Viewport 설정 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>자녀 정보 입력 - SJGHS 14기: 가정에서 학교로(가정 기초조사)</title>
+  <!-- Google Fonts (Noto Sans KR) -->
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary-color: #2b8a3e;
+      --secondary-color: #f5f5f5;
+      --accent-color: #4caf50;
+      --text-color: #333;
+      --border-color: #ccc;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+      background-color: var(--secondary-color);
+      color: var(--text-color);
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 800px;
+      margin: 2rem auto;
+      background: #fff;
+      padding: 1.5rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    header { text-align: center; padding: 1rem 0; margin-bottom: 1rem; }
+    header img { max-width: 100%; height: auto; margin-bottom: 0.5rem; }
+    header h1 { font-size: 1.5rem; color: var(--primary-color); }
+    fieldset {
+      margin-bottom: 1rem;
+      border: 1px solid var(--border-color);
+      padding: 1rem;
+      border-radius: 4px;
+    }
+    fieldset legend { padding: 0 0.5rem; font-weight: 700; margin-bottom: 0.5rem; }
+    label { display: block; margin-top: 0.5rem; font-weight: 600; }
+    input, select, textarea {
+      width: 100%;
+      padding: 0.5rem;
+      margin-top: 0.3rem;
+      margin-bottom: 0.5rem;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      font-size: 1rem;
+    }
+    textarea { resize: vertical; min-height: 5rem; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 0.5rem;
+    }
+    table th, table td {
+      border: 1px solid var(--border-color);
+      padding: 0.5rem;
+      text-align: center;
+      vertical-align: middle;
+    }
+    .button-row { text-align: center; margin-top: 1rem; }
+    .add-btn, .submit-btn {
+      background-color: var(--accent-color);
+      color: #fff;
+      border: none;
+      padding: 0.7rem 1.2rem;
+      border-radius: 4px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    .add-btn:hover, .submit-btn:hover { background-color: #449d48; }
+    .hidden { display: none; }
+    @media (max-width: 600px) {
+      .container { margin: 1rem; padding: 1rem; }
+      header h1 { font-size: 1.2rem; }
+      .add-btn, .submit-btn { width: 100%; margin-top: 0.5rem; }
+      table th, table td { font-size: 0.9rem; padding: 0.3rem; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <img src="https://sjgl.sjeduhs.kr/upload/sjgl-h/widg/img_a2a8101e-225b-4faa-bb3c-e944cdc1dd751723446824195.png" alt="SJGHS 로고">
+    <h1>SJGHS 14기: 가정에서 학교로(가정 기초조사)</h1>
+  </header>
+  <div class="container">
+    <form id="infoForm">
+      <!-- 기본 정보 -->
+      <fieldset>
+        <legend>기본 정보</legend>
+
+        <!-- ✅ 추가: 학번 -->
+        <label for="studentId">학번(4자리) *</label>
+        <input type="text" id="studentId" name="studentId" placeholder="예: 1101" pattern="^\d{4}$" maxlength="4" required>
+
+        <label for="childName">자녀 이름 *</label>
+        <input type="text" id="childName" name="name" placeholder="자녀 이름을 입력하세요" required>
+
+        <label for="guardianContact">보호자 연락처(학교생활 관련 상담을 주로 할 보호자의 연락처를 기입해주세요) *</label>
+        <input type="text" id="guardianContact" name="guardianContact" oninput="formatPhone(this)" placeholder="01012345678" required>
+
+        <label for="guardianRelationship">보호자 연락처 소유자와 자녀와의 관계 *</label>
+        <input type="text" id="guardianRelationship" name="guardianRelationship" placeholder="예: 엄마, 아빠 등" required>
+      </fieldset>
+
+      <!-- 가족 정보 (최소 1명, 최대 5명) -->
+      <fieldset>
+        <legend>가족 정보 (최대 5명) *</legend>
+        <table>
+          <thead>
+            <tr>
+              <th>관계 *</th>
+              <th>자녀와의 친밀도(10점 만점) *</th>
+              <th>동거여부 *</th>
+              <th>삭제</th>
+            </tr>
+          </thead>
+          <tbody id="familyTbody">
+            <!-- 가족 정보 행은 JavaScript로 동적 추가 -->
+          </tbody>
+        </table>
+        <div class="button-row">
+          <button type="button" class="add-btn" onclick="addFamilyRow()">가족 정보 추가</button>
+        </div>
+      </fieldset>
+
+      <!-- 자녀 생활 정보 -->
+      <fieldset>
+        <legend>자녀 생활 정보 *</legend>
+        <label for="familyAttitude">가정에서의 자녀생활 태도는 어떤가요? *</label>
+        <textarea id="familyAttitude" name="familyAttitude" placeholder="자녀의 가정생활태도를 자세히 입력하세요" required></textarea>
+
+        <label for="middleSchoolLife">자녀의 중학교 학교생활은 어땠나요?(학업, 교우관계 등을 중심으로 적어주세요)*</label>
+        <textarea id="middleSchoolLife" name="middleSchoolLife" placeholder="자녀의 중학교 학교생활을 서술형으로 입력하세요" required></textarea>
+
+        <label for="healthNotes">건강 상 특이사항(없을 경우 없음으로 적어주세요) *</label>
+        <input type="text" id="healthNotes" name="healthNotes" placeholder="입력하세요" required>
+
+        <label>가정 경제상황 *</label>
+        <select id="financialDropdown" name="financialSituation" required onchange="toggleFinancialReason(this)">
+          <option value="">선택하세요</option>
+          <option value="학비지원이 필요합니다">학비지원이 필요합니다</option>
+          <option value="기초생활수급자, 차상위 계층은 아니나 경제생활에 어려움이 있어 지원기회가 있다면 안내를 원합니다">
+            기초생활수급자, 차상위 계층은 아니나 경제생활에 어려움이 있어 지원기회가 있다면 안내를 원합니다
+          </option>
+          <option value="학비지원 등의 안내는 필요없습니다">학비지원 등의 안내는 필요없습니다</option>
+        </select>
+        <input type="text" id="financialReason" name="financialReason" placeholder="이유 입력 (선택 사항)">
+
+        <label for="childCharm">자녀의 매력과 긍정적으로 칭찬할 점 *</label>
+        <textarea id="childCharm" name="childCharm" placeholder="입력하세요" required></textarea>
+
+        <label for="improvementPoints">자녀가 개선했으면 하는 점 *</label>
+        <textarea id="improvementPoints" name="improvementPoints" placeholder="입력하세요" required></textarea>
+      </fieldset>
+
+      <!-- 자녀 학업 정보 -->
+      <fieldset>
+        <legend>자녀 학업 정보 *</legend>
+        <label>자녀 학업 관련 결정을 내리는 가족 구성원 *</label>
+        <select id="decisionDropdown" name="decisionMaker" required onchange="handleDecisionChange(this, 'decisionOther')">
+          <option value="">선택하세요</option>
+          <option value="아버지">아버지</option>
+          <option value="어머니">어머니</option>
+          <option value="형제자매">형제자매</option>
+          <option value="기타">기타</option>
+        </select>
+        <input type="text" id="decisionOther" class="hidden" placeholder="기타 선택 시 입력">
+
+        <label>자녀 평소 학업습관 지도 *</label>
+        <select id="habitDropdown" name="studyGuidance" required onchange="handleHabitChange(this, 'habitOther')">
+          <option value="">선택하세요</option>
+          <option value="학업 습관을 바르게 하기 위해 꼼꼼히 지도하는 편이다">학업 습관을 바르게 하기 위해 꼼꼼히 지도하는 편이다</option>
+          <option value="본인이 알아서 할 수 있도록 자유롭게 두는 편이다">본인이 알아서 할 수 있도록 자유롭게 두는 편이다</option>
+          <option value="기타">기타</option>
+        </select>
+        <input type="text" id="habitOther" class="hidden" placeholder="기타 선택 시 입력">
+
+        <label for="privateEducation">자녀가 받고 있는 사교육(예시: 수학/토요일/2시간/선행) *</label>
+        <textarea id="privateEducation" name="privateEducation" placeholder="자녀가 받고 있는 사교육 관련 내용을 서술형으로 입력하세요" required></textarea>
+
+        <label for="studyHabits">자녀 평소 학업습관의 장점과 문제점 *</label>
+        <textarea id="studyHabits" name="studyHabits" placeholder="입력하세요" required></textarea>
+
+        <label for="homeActivities">자녀가 평소 집에서 하는 활동 *</label>
+        <textarea id="homeActivities" name="homeActivities" placeholder="자녀가 집에서 하는 활동을 서술형으로 입력하세요" required></textarea>
+
+        <label for="careerHope">보호자의 희망진로분야 및 그 이유(대학을 작성하는 칸이 아닙니다.) *</label>
+        <input type="text" id="careerHope" name="careerHope" placeholder="입력하세요" required>
+      </fieldset>
+
+      <!-- 기타 정보 -->
+      <fieldset>
+        <legend>기타 정보 *</legend>
+        <label for="teacherNotes">담임교사가 꼭 알아야 하는 사항(없을 경우 없음으로 입력) *</label>
+        <textarea id="teacherNotes" name="teacherNotes" placeholder="입력하세요" required></textarea>
+      </fieldset>
+
+      <div class="button-row">
+        <button type="submit" class="submit-btn">저장</button>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    // ✅ 여기에 "14기 가정 기초 조사" 스프레드시트의 Apps Script 웹앱(/exec) URL을 넣으세요.
+    const GAS_WEBAPP_EXEC_URL = "https://script.google.com/macros/s/AKfycbw39or5B58KesuaXC0c1F2rJx1atdb0SFwu16IkHi9zKqT_Bq1gasHk3E9kp5UqFKia2w/exec";
+
+    // 1. 보호자 연락처 자동 하이픈 처리
+    function formatPhone(input) {
+      let cleaned = input.value.replace(/\D/g, '');
+      let formatted = '';
+      if (cleaned.length <= 3) {
+        formatted = cleaned;
+      } else if (cleaned.length <= 7) {
+        formatted = cleaned.slice(0, 3) + '-' + cleaned.slice(3);
+      } else if (cleaned.length <= 11) {
+        formatted = cleaned.slice(0, 3) + '-' + cleaned.slice(3,7) + '-' + cleaned.slice(7);
+      } else {
+        formatted = cleaned.slice(0, 3) + '-' + cleaned.slice(3,7) + '-' + cleaned.slice(7,11);
+      }
+      input.value = formatted;
+    }
+
+    // 2. 가족 정보 동적 추가 (최소 1명, 최대 5명)
+    const maxFamilyCount = 5;
+    let familyCount = 0;
+    const familyTbody = document.getElementById('familyTbody');
+
+    // 페이지 로드 시 최소 1행 생성
+    window.onload = function() {
+      addFamilyRow();
+    };
+
+    function addFamilyRow() {
+      if (familyCount >= maxFamilyCount) {
+        alert(`가족 정보는 최대 ${maxFamilyCount}명까지 입력 가능합니다.`);
+        return;
+      }
+      const tr = document.createElement('tr');
+
+      // (1) 관계
+      const relationTd = document.createElement('td');
+      const relationInput = document.createElement('input');
+      relationInput.type = 'text';
+      relationInput.placeholder = "예: 할아버지, 할머니, 형제 등";
+      relationInput.required = true;
+      relationTd.appendChild(relationInput);
+      tr.appendChild(relationTd);
+
+      // (2) 친밀도(10점 만점)
+      const intimacyTd = document.createElement('td');
+      const intimacySelect = document.createElement('select');
+      intimacySelect.required = true;
+
+      const placeholderOpt = document.createElement('option');
+      placeholderOpt.value = "";
+      placeholderOpt.textContent = "선택";
+      intimacySelect.appendChild(placeholderOpt);
+
+      for (let i = 1; i <= 10; i++) {
+        const option = document.createElement('option');
+        option.value = i;
+        option.textContent = i;
+        intimacySelect.appendChild(option);
+      }
+      intimacyTd.appendChild(intimacySelect);
+      tr.appendChild(intimacyTd);
+
+      // (3) 동거여부
+      const cohabTd = document.createElement('td');
+      const cohabSelect = document.createElement('select');
+      cohabSelect.required = true;
+
+      const placeholderC = document.createElement('option');
+      placeholderC.value = "";
+      placeholderC.textContent = "선택";
+      cohabSelect.appendChild(placeholderC);
+
+      ['O', 'X'].forEach(val => {
+        const option = document.createElement('option');
+        option.value = val;
+        option.textContent = val;
+        cohabSelect.appendChild(option);
+      });
+      cohabTd.appendChild(cohabSelect);
+      tr.appendChild(cohabTd);
+
+      // (4) 삭제 버튼
+      const deleteTd = document.createElement('td');
+      const deleteBtn = document.createElement('button');
+      deleteBtn.type = 'button';
+      deleteBtn.textContent = '삭제';
+      deleteBtn.onclick = function() {
+        familyTbody.removeChild(tr);
+        familyCount--;
+      };
+      deleteTd.appendChild(deleteBtn);
+      tr.appendChild(deleteTd);
+
+      familyTbody.appendChild(tr);
+      familyCount++;
+    }
+
+    // 3. "기타" 선택 시 추가 입력란 보이기
+    function handleDecisionChange(selectElem, otherElemId) {
+      const otherElem = document.getElementById(otherElemId);
+      if (selectElem.value === "기타") {
+        otherElem.classList.remove('hidden');
+        otherElem.required = true;
+      } else {
+        otherElem.classList.add('hidden');
+        otherElem.value = "";
+        otherElem.required = false;
+      }
+    }
+    function handleHabitChange(selectElem, otherElemId) {
+      const otherElem = document.getElementById(otherElemId);
+      if (selectElem.value === "기타") {
+        otherElem.classList.remove('hidden');
+        otherElem.required = true;
+      } else {
+        otherElem.classList.add('hidden');
+        otherElem.value = "";
+        otherElem.required = false;
+      }
+    }
+
+    // 3-1. 가정 경제상황 드롭다운에 따른 이유 입력란 토글
+    function toggleFinancialReason(selectElem) {
+      const financialReason = document.getElementById('financialReason');
+      if (selectElem.value === "학비지원 등의 안내는 필요없습니다") {
+        financialReason.classList.add('hidden');
+        financialReason.value = "";
+      } else {
+        financialReason.classList.remove('hidden');
+      }
+    }
+
+    // 4. 폼 제출 및 데이터 전송
+    document.getElementById('infoForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      // ✅ (A) 학번 + 기본 정보
+      const studentId = document.getElementById('studentId').value.trim();
+      const name = document.getElementById('childName').value.trim();
+      const guardianContact = document.getElementById('guardianContact').value.trim();
+      const guardianRelationship = document.getElementById('guardianRelationship').value.trim();
+
+      if (!/^\d{4}$/.test(studentId)) {
+        alert("학번은 4자리 숫자여야 합니다.");
+        return;
+      }
+
+      // (B) 가족 정보 수집
+      const familyData = [];
+      const rows = familyTbody.querySelectorAll('tr');
+      if (rows.length < 1) {
+        alert('가족 정보를 최소 1명 이상 입력해주세요.');
+        return;
+      }
+      for (const row of rows) {
+        const relation = row.cells[0].querySelector('input').value.trim();
+        const intimacy = row.cells[1].querySelector('select').value;
+        const cohab = row.cells[2].querySelector('select').value;
+
+        if (!relation || !intimacy || !cohab) {
+          alert("가족 정보는 모든 항목을 입력해야 합니다.");
+          return;
+        }
+        familyData.push({ relation, intimacy, cohabitation: cohab });
+      }
+
+      // (C) 자녀 생활 정보
+      const familyAttitude = document.getElementById('familyAttitude').value.trim();
+      const middleSchoolLife = document.getElementById('middleSchoolLife').value.trim();
+      const healthNotes = document.getElementById('healthNotes').value.trim();
+
+      const financialDropdown = document.getElementById('financialDropdown').value;
+      const financialReason = document.getElementById('financialReason').value.trim();
+      let financialSituation = financialDropdown;
+      if (financialReason) financialSituation += " - " + financialReason;
+
+      const childCharm = document.getElementById('childCharm').value.trim();
+      const improvementPoints = document.getElementById('improvementPoints').value.trim();
+
+      // (D) 자녀 학업 정보
+      const decisionDropdown = document.getElementById('decisionDropdown').value;
+      const decisionOther = document.getElementById('decisionOther').value.trim();
+      let decisionMaker = decisionDropdown;
+      if (decisionDropdown === "기타" && decisionOther) decisionMaker += ` (${decisionOther})`;
+
+      const habitDropdown = document.getElementById('habitDropdown').value;
+      const habitOther = document.getElementById('habitOther').value.trim();
+      let studyGuidance = habitDropdown;
+      if (habitDropdown === "기타" && habitOther) studyGuidance += ` (${habitOther})`;
+
+      const privateEducation = document.getElementById('privateEducation').value.trim();
+      const studyHabits = document.getElementById('studyHabits').value.trim();
+      const homeActivities = document.getElementById('homeActivities').value.trim();
+      const careerHope = document.getElementById('careerHope').value.trim();
+
+      // (E) 기타 정보
+      const teacherNotes = document.getElementById('teacherNotes').value.trim();
+
+      // ✅ 최종 데이터 객체(서버(doPost) key와 일치)
+      const formData = {
+        studentId,
+        name,
+        guardianContact,
+        guardianRelationship,
+        familyData,
+        childLifeInfo: {
+          familyAttitude,
+          middleSchoolLife,
+          healthNotes,
+          financialSituation,
+          childCharm,
+          improvementPoints
+        },
+        childStudyInfo: {
+          decisionMaker,
+          studyGuidance,
+          privateEducation,
+          studyHabits,
+          homeActivities,
+          careerHope
+        },
+        teacherNotes
+      };
+
+      fetch(GAS_WEBAPP_EXEC_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData)
+      })
+      .then(() => {
+        alert("데이터가 저장(업데이트)되었습니다!");
+        document.getElementById("infoForm").reset();
+        familyTbody.innerHTML = "";
+        familyCount = 0;
+        addFamilyRow();
+      })
+      .catch(error => {
+        alert("오류가 발생했습니다: " + error);
+      });
+    });
+  </script>
+</body>
+</html>
